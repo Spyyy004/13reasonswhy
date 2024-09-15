@@ -5,6 +5,7 @@ const { PDFDocument } = require('pdf-lib');
 const fileUpload = require('express-fileupload');
 const axios = require('axios');
 const csvParser = require('csv-parser');
+const nodemailer = require('nodemailer'); // Import nodemailer
 require('dotenv').config();
 const cors = require('cors');
 
@@ -12,7 +13,6 @@ const app = express();
 app.use(express.json());
 app.use(fileUpload()); // Enable file upload support
 app.use(cors());
-  
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,104 +22,6 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
 }
 
-// Endpoint to upload and parse PDF bank statements
-app.post('/upload-pdf', async (req, res) => {
-    const file = req.files && req.files.pdfFile; // Check if file is provided
-
-    if (!file) {
-        return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
-    }
-
-    const sanitizedFileName = file.name.replace(/\s+/g, '_');
-    const tempFilePath = path.join(uploadsDir, sanitizedFileName);
-
-    try {
-        await file.mv(tempFilePath); // Move file to the uploads directory
-
-        const pdfBytes = fs.readFileSync(tempFilePath);
-        const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-
-        let pdfTextContent = '';
-        const pages = pdfDoc.getPages();
-        for (const page of pages) {
-            const { text } = await page.getTextContent();
-            pdfTextContent += text;
-        }
-
-        const transactions = parsePDFToTransactions(pdfTextContent);
-
-        fs.unlinkSync(tempFilePath);
-
-        res.json({
-            success: true,
-            message: 'PDF parsed successfully',
-            transactions,
-        });
-    } catch (error) {
-        console.error('Error parsing PDF:', error);
-        res.status(500).json({ success: false, message: 'Error parsing PDF', error: error.message });
-    }
-});
-
-// Endpoint to upload and parse CSV bank statements
-app.post('/upload-csv', async (req, res) => {
-    const file = req.files && req.files.csvFile; // Check if file is provided
-
-    if (!file) {
-        return res.status(400).json({ success: false, message: 'No CSV file uploaded' });
-    }
-
-    const sanitizedFileName = file.name.replace(/\s+/g, '_');
-    const tempFilePath = path.join(uploadsDir, sanitizedFileName);
-
-    try {
-        await file.mv(tempFilePath); // Move file to the uploads directory
-
-        const transactions = [];
-        fs.createReadStream(tempFilePath)
-            .pipe(csvParser())
-            .on('data', (row) => {
-                transactions.push(row);
-            })
-            .on('end', () => {
-                fs.unlinkSync(tempFilePath);
-
-                res.json({
-                    success: true,
-                    message: 'CSV parsed successfully',
-                    transactions,
-                });
-            })
-            .on('error', (error) => {
-                console.error('Error parsing CSV:', error);
-                res.status(500).json({ success: false, message: 'Error parsing CSV', error: error.message });
-            });
-    } catch (error) {
-        console.error('Error processing CSV upload:', error);
-        res.status(500).json({ success: false, message: 'Error processing CSV upload', error: error.message });
-    }
-});
-
-// Function to parse PDF text into transaction objects (mock function, customize based on your PDF format)
-function parsePDFToTransactions(pdfText) {
-    console.log(pdfText, "AOOAOAOA");
-    const transactions = [];
-    const lines = pdfText.split('\n');
-
-    lines.forEach(line => {
-        const parts = line.split('|');
-        if (parts.length === 4) {
-            transactions.push({
-                date: parts[0].trim(),
-                amount: parseFloat(parts[1].trim()),
-                category: parts[2].trim(),
-                description: parts[3].trim(),
-            });
-        }
-    });
-
-    return transactions;
-}
 
 // Endpoint to generate AI spending insights
 app.post('/generate-insights', async (req, res) => {
@@ -166,6 +68,8 @@ app.post('/generate-insights', async (req, res) => {
         // Return only the success and failure arrays
         const { success = [], failure = [] } = parsedData;
 
+
+
         res.json({
             success: true,
             insights: {
@@ -179,40 +83,7 @@ app.post('/generate-insights', async (req, res) => {
     }
 });
 
-// Endpoint to generate spending challenges
-app.post('/generate-challenges', (req, res) => {
-    const { transactions } = req.body;
-
-    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
-        return res.status(400).json({ success: false, message: 'No transactions provided' });
-    }
-
-    let maxCategory = '';
-    let maxAmount = 0;
-    const categories = {};
-
-    transactions.forEach((transaction) => {
-        const category = transaction.category || 'Misc';
-        const amount = parseFloat(transaction.amount);
-
-        if (isNaN(amount)) return; // Skip invalid amounts
-
-        if (!categories[category]) categories[category] = 0;
-        categories[category] += amount;
-
-        if (categories[category] > maxAmount) {
-            maxAmount = categories[category];
-            maxCategory = category;
-        }
-    });
-
-    const challenge = `Your biggest spending is on ${maxCategory} ($${maxAmount.toFixed(2)}). Try reducing this by 10% next week!`;
-
-    res.json({
-        success: true,
-        challenge,
-    });
-});
+// Other endpoints here...
 
 // Start the server
 app.listen(PORT, () => {

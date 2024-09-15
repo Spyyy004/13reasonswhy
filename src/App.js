@@ -3,28 +3,30 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import '@fontsource/raleway'; // Import a modern font
+import mixpanel from 'mixpanel-browser';
 
+mixpanel.init('3c2b5ecba43167fc94001a0b2ce32da5');
 // Styled components
 const Container = styled.div`
-  width: 100%; /* Full width */
+  width: 100%;
   margin: 0 auto;
-  min-height: 100vh; /* Ensure it takes up at least the full viewport height */
+  min-height: 100vh;
   padding: 20px;
-  background-color: #1e1e1e; /* Dark background */
-  color: #e0e0e0; /* Light text color */
-  font-family: 'Raleway', sans-serif; /* Modern font */
-  overflow: auto; /* Handle overflow by scrolling */
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  font-family: 'Raleway', sans-serif;
+  overflow: auto;
 `;
 
 const InputForm = styled(motion.form)`
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center align the form */
+  align-items: center;
 `;
 
 const InputField = styled(motion.input)`
   width: 100%;
-  max-width: 600px; /* Limit width for better readability */
+  max-width: 500px; /* Adjusted for better mobile readability */
   margin-bottom: 15px;
   padding: 15px;
   border: 1px solid #333;
@@ -58,20 +60,29 @@ const SubmitButton = styled(motion.button)`
 
 const Results = styled.div`
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap; /* Wrap if necessary */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  gap: 20px; /* Space between columns */
   margin-top: 30px;
-  overflow: auto; /* Ensure overflow is handled within this section */
+  overflow: auto;
+
+  @media (max-width: 768px) {
+    flex-direction: column; /* Stack columns vertically on mobile */
+  }
 `;
 
 const ResultColumn = styled.div`
-  width: 48%;
+  flex: 1;
   background-color: #2c2c2c;
   border-radius: 8px;
   padding: 15px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  max-height: 60vh; /* Limit height and add scrolling if necessary */
-  overflow-y: auto; /* Handle vertical overflow with scroll */
+  max-height: 60vh;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    width: 100%; /* Full width on mobile */
+    margin-bottom: 15px; /* Space between stacked columns */
+  }
 `;
 
 const Reason = styled(motion.div)`
@@ -83,7 +94,7 @@ const Reason = styled(motion.div)`
 const Header = styled.h1`
   text-align: center;
   margin-bottom: 20px;
-  font-size: 2.5em;
+  font-size: 2em; /* Adjusted for better mobile readability */
   color: #ffffff;
 `;
 
@@ -95,8 +106,8 @@ const Loader = styled.div`
 `;
 
 const LoaderSpinner = styled.div`
-  border: 8px solid rgba(0, 0, 0, 0.1); /* Light gray */
-  border-left: 8px solid #007bff; /* Blue color */
+  border: 8px solid rgba(0, 0, 0, 0.1);
+  border-left: 8px solid #007bff;
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -126,6 +137,9 @@ const App = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    mixpanel.track('Analyze Idea',{
+      idea
+    });
     setLoading(true); // Start loading
     try {
       const response = await axios.post('https://one3reasonswhy-backend.onrender.com/generate-insights', { idea });
