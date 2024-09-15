@@ -128,7 +128,7 @@ const App = () => {
     e.preventDefault();
     setLoading(true); // Start loading
     try {
-      const response = await axios.post('http://localhost:3000/generate-insights', { idea });
+      const response = await axios.post('https://one3reasonswhy-backend.onrender.com/generate-insights', { idea });
       setResults(response.data);
     } catch (error) {
       console.error('Error submitting idea:', error);
