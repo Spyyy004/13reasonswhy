@@ -10,6 +10,7 @@
     "axios": "^1.7.7",
     "chart.js": "^4.4.4",
     "framer-motion": "^11.5.4",
+    "mixpanel-browser": "^2.55.1",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
