@@ -164,7 +164,7 @@ const App = () => {
           type="text"
           value={idea}
           onChange={(e) => setIdea(e.target.value)}
-          placeholder="Enter your business or startup idea"
+          placeholder="Enter your next million dollar idea!"
           required
         />
         <SubmitButton
